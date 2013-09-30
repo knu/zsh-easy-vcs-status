@@ -1,0 +1,110 @@
+# -*- mode: sh -*-
+#
+# easy-vcs-status - a zle tweak for easy access to VCS status
+#
+# Copyright (c) 2013 Akinori MUSHA
+# Licensed under the 2-clause BSD license.
+#
+# This tweak allows user to see VCS status in the completion menu UI
+# when the tab key is hit when the command line is empty.
+#
+# See https://github.com/knu/zsh-easy-vcs-status for more information.
+
+vcs-status() {
+    emulate -L zsh
+    local cmd="$(vcs-status-command)" || return 1
+    ${(z)cmd}
+}
+
+vcs-status-command() {
+    emulate -L zsh
+    local vcs=${vcs_info_msg_0_%%\;*} cmd
+    zstyle -s ":easy-vcs-status:${vcs}" command cmd
+
+    if [[ -n $cmd ]]; then
+        print "$cmd"
+        return
+    fi
+
+    case $vcs in
+        git)
+            print 'git -c color.ui=always status' ;;
+        svn)
+            print 'svn status' ;;
+        cvs)
+            print 'cvs -n up' ;;
+        p4)
+            print 'p4 status' ;;
+        hg)
+            print 'hg status' ;;
+        bzr)
+            print 'bzr status' ;;
+        *)
+            return 1
+    esac
+}
+
+expand-or-complete-or-vcs-status() {
+    emulate -L zsh
+
+    if [[ -z $BUFFER && -n "$(vcs-status-command)" ]]; then
+        BUFFER="vcs-status "
+        CURSOR=$#BUFFER
+        zle expand-or-complete
+        if [[ $KEYS = $'\r' && -n "$vcs_status_output" ]]; then
+            print
+            print -r "$vcs_status_output"
+        fi
+        unset vcs_status_output
+        BUFFER=
+        CURSOR=0
+        zle reset-prompt
+    else
+        zle expand-or-complete
+    fi
+}
+
+zle -N expand-or-complete-or-vcs-status
+
+_vcs-status() {
+    emulate -L zsh
+    setopt extended_glob
+    local -a lines values
+    local i n
+
+    vcs_status_output="$(vcs-status)"
+
+    # Expand tabs and remove escape sequences.  They break display
+    # when scrolling or folding concerns.
+    lines=("${(@f)$(expand <<<"${vcs_status_output//$'\e'\[[0-9;]#[mK]}")}")
+    n=$#lines
+
+    if ((n == 1)); then
+        [ -n "$lines" ] || lines=($'\e[7m(empty)\e[m')
+        lines+=($'\e[7;33m[END]\e[m')
+        ((n += 1))
+    fi
+
+    for i in {1..$n}; do
+        values[$i]=$(printf '[%0*u/%u]' $#n $i $n)
+    done
+
+    compadd -QUlod lines -- ${values[@]}
+    compstate[insert]=menu
+}
+
+compdef _vcs-status vcs-status
+
+easy-vcs-status.on() {
+    bindkey '^I' expand-or-complete-or-vcs-status
+}
+
+easy-vcs-status.off() {
+    bindkey '^I' expand-or-complete
+}
+
+easy-vcs-status() {
+    easy-vcs-status.on
+}
+
+[[ -o kshautoload ]] || easy-vcs-status "$@"
