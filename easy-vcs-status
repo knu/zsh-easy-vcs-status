@@ -19,7 +19,7 @@ vcs-status() {
 vcs-status-command() {
     emulate -L zsh
     local vcs=${vcs_info_msg_0_%%\;*} cmd
-    zstyle -s ":easy-vcs-status:${vcs}" command cmd
+    zstyle -s ":easy-vcs-status:command" $vcs cmd
 
     if [[ -n $cmd ]]; then
         print "$cmd"

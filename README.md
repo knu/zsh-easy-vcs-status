@@ -42,7 +42,7 @@ Configuration
 Commands for showing VCS statuses are configurable via `zstyle` as
 follows:
 
-    zstyle ":easy-vcs-status:${vcs}" command "${command}"
+    zstyle ":easy-vcs-status:command" "$vcs" "$command"
 
 For convenient scrolling through a long status output, I strongly
 suggest binding keys in the menuselect keymap if you haven't, for
