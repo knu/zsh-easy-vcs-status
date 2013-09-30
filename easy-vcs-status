@@ -5,8 +5,9 @@
 # Copyright (c) 2013 Akinori MUSHA
 # Licensed under the 2-clause BSD license.
 #
-# This tweak allows user to see VCS status in the completion menu UI
-# when the tab key is hit when the command line is empty.
+# This tweak allows user to pop up VCS status using the completion
+# menu UI with a key combination (default: `Meta-Shift-S`) whenever
+# you are on the command line.
 #
 # See https://github.com/knu/zsh-easy-vcs-status for more information.
 
@@ -44,27 +45,27 @@ vcs-status-command() {
     esac
 }
 
-expand-or-complete-or-vcs-status() {
+open-vcs-status() {
     emulate -L zsh
+    local OBUFFER OCURSOR
 
-    if [[ -z $BUFFER && -n "$(vcs-status-command)" ]]; then
-        BUFFER="vcs-status "
-        CURSOR=$#BUFFER
-        zle expand-or-complete
-        if [[ $KEYS = $'\r' && -n "$vcs_status_output" ]]; then
-            print
-            print -r "$vcs_status_output"
-        fi
-        unset vcs_status_output
-        BUFFER=
-        CURSOR=0
-        zle reset-prompt
-    else
-        zle expand-or-complete
+    [[ -n "$(vcs-status-command)" ]] || return
+    OBUFFER=$BUFFER
+    OCURSOR=$CURSOR
+    BUFFER="vcs-status "
+    CURSOR=$#BUFFER
+    zle expand-or-complete
+    if [[ $KEYS = $'\r' && -n "$vcs_status_output" ]]; then
+        print
+        print -r "$vcs_status_output"
     fi
+    unset vcs_status_output
+    BUFFER=$OBUFFER
+    CURSOR=$OCURSOR
+    zle reset-prompt
 }
 
-zle -N expand-or-complete-or-vcs-status
+zle -N open-vcs-status
 
 _vcs-status() {
     emulate -L zsh
@@ -95,16 +96,17 @@ _vcs-status() {
 
 compdef _vcs-status vcs-status
 
-easy-vcs-status.on() {
-    bindkey '^I' expand-or-complete-or-vcs-status
-}
-
-easy-vcs-status.off() {
-    bindkey '^I' expand-or-complete
-}
-
 easy-vcs-status() {
-    easy-vcs-status.on
+    emulate -L zsh
+    local key
+    zstyle -s ":easy-vcs-status:bindkey" open key
+
+    bindkey ${key:-'^[S'} open-vcs-status
+
+    zstyle -s ":easy-vcs-status:bindkey" close key
+
+    zmodload zsh/complist
+    bindkey -M menuselect ${key:-'^[S'} send-break
 }
 
 [[ -o kshautoload ]] || easy-vcs-status "$@"

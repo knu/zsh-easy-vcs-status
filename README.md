@@ -11,14 +11,15 @@ Description
 
 ![Screen shot](../master/screenshot1.png?raw=true)
 
-This tweak allows user to see VCS status in the completion menu UI
-when the tab key is hit when the command line is empty.
+This tweak allows user to pop up VCS status using the completion menu
+UI with a key combination (default: `Meta-Shift-S`) whenever you are
+on the command line.
 
 VCS status is shown in the completion menu which is scrollable back
 and forth.  If you hit enter to finish the completion, the full output
 is written to the standard output.  Otherwise, the menu simply
 disappears and user can get back to normal operation on the command
-line.
+line with the previous input.
 
 How to set up
 -------------
@@ -38,6 +39,15 @@ wrapper of `expand-or-complete` that casts all the magic.
 
 Configuration
 -------------
+
+Keys for opening and closing VCS status popups are configurable via
+`zstyle` as follows:
+
+    # Use Meta-Control-S instead
+    zstyle ":easy-vcs-status:bindkey" open '^[^S'
+
+You can alternatively manually bind a key to the function
+`open-vcs-status`.
 
 Commands for showing VCS statuses are configurable via `zstyle` as
 follows:
