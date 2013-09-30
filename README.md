@@ -9,6 +9,8 @@ Synopsis
 Description
 -----------
 
+![Screen shot](../master/screenshot1.png?raw=true)
+
 This tweak allows user to see VCS status in the completion menu UI
 when the tab key is hit when the command line is empty.
 
