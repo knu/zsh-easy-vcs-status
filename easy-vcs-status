@@ -27,7 +27,7 @@ vcs-status-command() {
     fi
 
     case $vcs in
-        git)
+        git|git-svn)
             print 'git -c color.ui=always status' ;;
         svn)
             print 'svn status' ;;
