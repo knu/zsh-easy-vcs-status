@@ -86,15 +86,14 @@ _vcs-status() {
     lines=("${(@f)$(expand <<<"${vcs_status_output//$'\e'\[[0-9;]#[mK]}")}")
     n=$#lines
 
-    if ((n == 1)); then
-        [ -n "$lines" ] || lines=($'\e[7m(empty)\e[m')
-        lines+=($'\e[7;33m[END]\e[m')
-        ((n += 1))
+    if ((n < 2)); then
+        lines=("${lines[1]:-(empty)}" $'\e[7;33m'"[END]"$'\e[m')
+        values=('[1/1]' '[END]')
+    else
+        for i in {1..$n}; do
+            values[$i]=$(printf '[%0*u/%u]' $#n $i $n)
+        done
     fi
-
-    for i in {1..$n}; do
-        values[$i]=$(printf '[%0*u/%u]' $#n $i $n)
-    done
 
     compadd -QUlod lines -- ${values[@]}
     compstate[insert]=menu
