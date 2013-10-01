@@ -52,7 +52,10 @@ open-vcs-status() {
     emulate -L zsh
     local OBUFFER OCURSOR
 
-    [[ -n "$(vcs-status-command)" ]] || return
+    [[ -n "$(vcs-status-command)" ]] || {
+        print -n '\a'
+        return 1
+    }
     OBUFFER=$BUFFER
     OCURSOR=$CURSOR
     BUFFER="vcs-status "
