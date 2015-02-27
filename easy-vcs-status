@@ -94,7 +94,7 @@ open-vcs-status() {
     # Cache the output for awhile
     sched +5 unset vcs_status_output vcs_status_output_text
 
-    LBUFFER="$OLBUFFER$arg"
+    LBUFFER="$OLBUFFER${arg:+${(q)arg}}"
     RBUFFER="$ORBUFFER"
     zle reset-prompt
 }
