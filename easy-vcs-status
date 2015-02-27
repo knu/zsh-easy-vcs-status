@@ -2,12 +2,16 @@
 #
 # easy-vcs-status - a zle tweak for easy access to VCS status
 #
-# Copyright (c) 2013 Akinori MUSHA
+# Copyright (c) 2013-2015 Akinori MUSHA
 # Licensed under the 2-clause BSD license.
 #
 # This tweak allows user to pop up VCS status using the completion
 # menu UI with a key combination (default: `Meta-Shift-S`) whenever
 # you are on the command line.
+#
+# Hit RET to fix the output on the terminal, and hit SPC to paste the
+# last shell word on a selected line to the command line as result of
+# completion.
 #
 # See https://github.com/knu/zsh-easy-vcs-status for more information.
 
@@ -50,24 +54,45 @@ vcs-status-command() {
 
 open-vcs-status() {
     emulate -L zsh
-    local OBUFFER OCURSOR
+    setopt extended_glob
+    local vcs=${vcs_info_msg_0_%%\;*}
+    local OLBUFFER ORBUFFER n arg
+    local -a lines fields
 
     [[ -n "$(vcs-status-command)" ]] || {
         print -n '\a'
         return 1
     }
-    OBUFFER=$BUFFER
-    OCURSOR=$CURSOR
-    BUFFER="vcs-status "
+    OLBUFFER=$LBUFFER
+    ORBUFFER=$RBUFFER
+    BUFFER="(vcs-status ($vcs) "
     CURSOR=$#BUFFER
-    zle expand-or-complete
-    if [[ $KEYS = $'\r' && -n "$vcs_status_output" ]]; then
-        print
-        print -r "$vcs_status_output"
+    zle reset-prompt
+    zle menu-complete
+
+    if [[ -n "$vcs_status_output" ]]; then
+        case $KEYS in
+            $' ')
+                n=${${BUFFER%/*}##*\[0#}
+                if [[ -n $n ]]; then
+                    lines=("${(@f)vcs_status_output_text}")
+                    fields=(${(z)${lines[$n]}})
+                    arg=${(Q)fields[$#fields]}
+                    if [[ $arg == *[.:\)] ]]; then
+                        # Ignore if it does not look like a path name
+                        arg=
+                    fi
+                fi
+                ;;
+            $'\r')
+                print
+                print -r "$vcs_status_output"
+                ;;
+        esac
     fi
-    unset vcs_status_output
-    BUFFER=$OBUFFER
-    CURSOR=$OCURSOR
+
+    LBUFFER="$OLBUFFER$arg"
+    RBUFFER="$ORBUFFER"
     zle reset-prompt
 }
 
@@ -79,20 +104,29 @@ _vcs-status() {
     local -a lines values
     local i n
 
-    vcs_status_output="$(vcs-status)"
+    if [[ -z $vcs_status_output ]]; then
+        vcs_status_output="$(vcs-status)"
+        # Expand tabs and remove escape sequences.  They break display
+        # when scrolling or folding concerns.
+        vcs_status_output_text="$(expand <<<"${vcs_status_output//$'\e'\[[0-9;]#[mK]}")"
+        # Cache the output for awhile
+        sched +5 unset vcs_status_output vcs_status_output_text
+    fi
 
-    # Expand tabs and remove escape sequences.  They break display
-    # when scrolling or folding concerns.
-    lines=("${(@f)$(expand <<<"${vcs_status_output//$'\e'\[[0-9;]#[mK]}")}")
+    lines=("${(@f)vcs_status_output_text}")
+
+    if (($#lines == 0)); then
+        lines=('(empty)')
+    fi
     n=$#lines
 
-    if ((n < 2)); then
-        lines=("${lines[1]:-(empty)}" $'\e[7;33m'"[END]"$'\e[m')
-        values=('[1/1]' '[END]')
-    else
-        for i in {1..$n}; do
-            values[$i]=$(printf '[%0*u/%u]' $#n $i $n)
-        done
+    for i in {1..$n}; do
+        values[$i]=$(printf '[%0*u/%u])' $#n $i $n)
+    done
+
+    if (($#lines == 1)); then
+        lines=($lines '[END]')
+        values=($values $'\e[7;33m'"[END])"$'\e[m')
     fi
 
     compadd -QUlod lines -- ${values[@]}
