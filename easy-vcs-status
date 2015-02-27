@@ -91,6 +91,9 @@ open-vcs-status() {
         esac
     fi
 
+    # Cache the output for awhile
+    sched +5 unset vcs_status_output vcs_status_output_text
+
     LBUFFER="$OLBUFFER$arg"
     RBUFFER="$ORBUFFER"
     zle reset-prompt
@@ -109,8 +112,6 @@ _vcs-status() {
         # Expand tabs and remove escape sequences.  They break display
         # when scrolling or folding concerns.
         vcs_status_output_text="$(expand <<<"${vcs_status_output//$'\e'\[[0-9;]#[mK]}")"
-        # Cache the output for awhile
-        sched +5 unset vcs_status_output vcs_status_output_text
     fi
 
     lines=("${(@f)vcs_status_output_text}")
