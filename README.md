@@ -16,10 +16,11 @@ UI with a key combination (default: `Meta-Shift-S`) whenever you are
 on the command line.
 
 VCS status is shown in the completion menu which is scrollable back
-and forth.  If you hit enter to finish the completion, the full output
-is written to the standard output.  Otherwise, the menu simply
-disappears and user can get back to normal operation on the command
-line with the previous input.
+and forth.  If you hit enter, the full output is written to the
+standard output.  If you hit space, the last shell word on the current
+line is pasted into the previous command line as result of the
+completion.  Otherwise, the menu simply disappears and user can get
+back to normal operation on the command line with the previous input.
 
 How to set up
 -------------
@@ -68,7 +69,7 @@ example:
 License
 -------
 
-Copyright (c) 2013 Akinori MUSHA
+Copyright (c) 2013-2015 Akinori MUSHA
 
 Licensed under the 2-clause BSD license.
-See `LICENSE` for details.
+See `LICENSE.txt` for details.
